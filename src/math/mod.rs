@@ -14,6 +14,19 @@ impl FieldElement {
         let e: BigInt = exp.into().clone();
         FieldElement::new(self.num.modpow(&e, &self.prime), self.prime.clone()).unwrap()
     }
+
+    
+    pub fn div<T: Into<BigInt>>(&self, divisor: T) -> FieldElement {
+        // Since a/b = a * b^-1 
+        // and b^(p-1) = 1 (Fermat's Little Theorem
+        // and b^-1 = b^-1*1 = b^-1 * b^(p-1) = b^(p-2) 
+        // then
+        // a / b = a * b^(p-2)
+        let divisor_bi: BigInt = divisor.into().clone();
+        let divisor_inv_exp: BigInt = divisor_bi.modpow(&(&self.prime - 2), &self.prime);
+        let mult = &self.num * &divisor_inv_exp;
+        FieldElement::new(mult.mod_floor(&self.prime), self.prime.clone()).unwrap()
+    }
 }
 pub type Result<T> = std::result::Result<T, Error>;
 
@@ -220,17 +233,17 @@ fn sub_fieldelement_moved_ref() {
 }
 
 #[test]
-
-fn bignum_mod() {
-    let b = BigInt::from(-4);
-    let a = b.mod_floor(&BigInt::from(7));
-    assert_eq!(a, BigInt::from(3));
-}
-
-
-#[test]
 fn field_element_pow() {
     let a = FieldElement::new(3,7).unwrap();
     let b = a.pow(2);
     assert_eq!(b, FieldElement::new(2,7).unwrap());
 }
+
+#[test]
+fn field_element_div() {
+    let a = FieldElement::new(1,7).unwrap();
+    let b = a.div(3);
+    assert_eq!(b, FieldElement::new(5, 7).unwrap());
+}
+
+
