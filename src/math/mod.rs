@@ -11,7 +11,15 @@ pub struct FieldElement {
 
 impl FieldElement {
     pub fn pow<T: Into<BigInt>>(&self, exp: T) -> FieldElement {
-        let e: BigInt = exp.into().clone();
+        let mut e: BigInt = exp.into().clone();
+
+        // Handle negative exponent
+        // modpow does not let us have negative exponent
+        // We can use fermat's little theorem here.
+        // x^-n = x^-n * 1 =  x^-n * x^(p-1) = x^(p-n-1) 
+        if e < BigInt::from(0) {
+            e += &self.prime - &1;
+        }
         FieldElement::new(self.num.modpow(&e, &self.prime), self.prime.clone()).unwrap()
     }
 
@@ -237,6 +245,11 @@ fn field_element_pow() {
     let a = FieldElement::new(3,7).unwrap();
     let b = a.pow(2);
     assert_eq!(b, FieldElement::new(2,7).unwrap());
+
+
+    let c = a.pow(-3);
+    assert_eq!(c, FieldElement::new(6,7).unwrap());
+    eprintln!("pow c: {:?}", c);
 }
 
 #[test]
